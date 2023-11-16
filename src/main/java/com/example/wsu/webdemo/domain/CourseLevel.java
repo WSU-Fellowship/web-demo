@@ -1,5 +1,8 @@
 package com.example.wsu.webdemo.domain;
 
+/**
+ * Represents course levels
+ */
 public enum CourseLevel {
     GRADUATE("Graduate"), UNDERGRADUATE("Undergraduate");
 

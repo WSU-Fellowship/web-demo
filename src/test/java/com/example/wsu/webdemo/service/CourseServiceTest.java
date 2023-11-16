@@ -1,89 +1,99 @@
 package com.example.wsu.webdemo.service;
 
 import com.example.wsu.webdemo.dto.CourseDTO;
+import com.example.wsu.webdemo.entity.Course;
 import com.example.wsu.webdemo.exception.CourseNotFoundException;
+import com.example.wsu.webdemo.repository.CourseRepository;
 import java.util.Collections;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 
+import static com.example.wsu.webdemo.utils.TestEntityFactory.validCourse;
+import static com.example.wsu.webdemo.utils.TestEntityFactory.validCourseDTO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class CourseServiceTest {
-    private CourseService courseService;
 
-    @BeforeEach
-    void init() {
-        courseService = new CourseService();
+    @InjectMocks
+    CourseService courseService;
+
+    @Mock
+    CourseRepository courseRepository;
+
+    @Spy
+    ModelMapper mapper;
+
+    @Test
+    public void createCourseReturnsNewCourse() {
+        Course newCourse = validCourse();
+        when(courseRepository.save(any(Course.class))).thenReturn(newCourse);
+
+        CourseDTO result = courseService.createCourse(validCourseDTO());
+
+        ArgumentCaptor<Course> courseCaptor = ArgumentCaptor.forClass(Course.class);
+        verify(courseRepository, times(1)).save(courseCaptor.capture());
+
+        assertEquals(mapper.map(newCourse, CourseDTO.class), result);
     }
 
     @Test
-    void createCourseCreatesAndReturnsNewCourse() {
-        CourseDTO newCourse = courseService.createCourse(
-            CourseDTO.builder().id(23L).build()
-        );
+    public void getCourseReturnsCourseIfFound() {
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(validCourse()));
 
-        assertEquals(23L, newCourse.getId());
-        assertEquals(23L, courseService.getCourse(23L).getId());
+        assertEquals(mapper.map(validCourse(), CourseDTO.class), courseService.getCourse(1L));
     }
 
     @Test
-    void getCourseReturnsCourseWhenCourseExists() {
-        courseService.createCourse(CourseDTO.builder().id(13L).build());
+    public void getCourseThrowsExceptionWhenCourseNotFound() {
+        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
 
-        CourseDTO fetchedCourse = courseService.getCourse(13L);
-
-        assertEquals(13L, fetchedCourse.getId());
+        Exception e = assertThrows(CourseNotFoundException.class, () -> courseService.getCourse(1L));
+        assertEquals("Invalid course id: 1", e.getMessage());
     }
 
     @Test
-    void getCourseThrowsExceptionWhenCourseDoesNotExist() {
-        CourseNotFoundException e = assertThrows(CourseNotFoundException.class, () -> {
-            courseService.getCourse(123L);
-        });
+    public void getAllCoursesReturnsAllCourses() {
+        when(courseRepository.findAll()).thenReturn(Collections.singletonList(validCourse()));
 
-        // optionally assert message, though it can be brittle
-        assertEquals("Invalid course id: 123", e.getMessage());
+        assertEquals(1, courseService.getAllCourses().size());
     }
 
     @Test
-    void getAllCoursesReturnsEmptyListWhenNoCourses() {
-        assertEquals(Collections.emptyList(), courseService.getAllCourses());
+    public void updateCourseReturnsUpdatedCourse() {
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(validCourse()));
+        when(courseRepository.save(any(Course.class))).thenReturn(validCourse());
+
+        assertEquals(mapper.map(validCourse(), CourseDTO.class), courseService.updateCourse(1L, validCourseDTO()));
     }
 
     @Test
-    void getAllCoursesReturnsListOfAllCourses() {
-        courseService.createCourse(CourseDTO.builder().id(1L).build());
-        courseService.createCourse(CourseDTO.builder().id(2L).build());
+    public void updateCourseThrowsExceptionWhenCourseNotFound() {
+        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertEquals(2, courseService.getAllCourses().size());
+        Exception e = assertThrows(CourseNotFoundException.class, () -> courseService.updateCourse(1L, validCourseDTO()));
+        assertEquals("Invalid course id: 1", e.getMessage());
     }
 
     @Test
-    void updateCourseThrowsExceptionWhenCourseDoesNotExist() {
-        CourseNotFoundException e = assertThrows(CourseNotFoundException.class, () -> {
-            courseService.updateCourse(1L, CourseDTO.builder().id(1L).code("101").build());
-        });
-    }
-
-    @Test
-    void updateCourseUpdatesAndReturnsCourseWhenCourseExists() {
-        CourseDTO course = courseService.createCourse(
-            CourseDTO.builder().id(1L).code("101").build());
-        course.setCode("201");
-
-        CourseDTO updatedCourse = courseService.updateCourse(1L, course);
-
-        assertEquals(course, updatedCourse);
-        assertEquals(course, courseService.getCourse(1L));
-    }
-
-    @Test
-    void deleteCourseDeletesCourse() {
-        courseService.createCourse(CourseDTO.builder().id(1L).build());
-
+    public void deleteCourseDeletesCourse() {
         courseService.deleteCourse(1L);
 
-        assertEquals(Collections.emptyList(), courseService.getAllCourses());
+        ArgumentCaptor<Long> idCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(courseRepository, times(1)).deleteById(idCaptor.capture());
+
+        assertEquals(1L, idCaptor.getValue());
     }
 }

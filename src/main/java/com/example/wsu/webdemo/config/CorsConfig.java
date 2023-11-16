@@ -6,6 +6,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+/**
+ * Configure application with a wide-open CORS config for all routes
+ * Allow any origin, any header, and any HTTP method
+ */
 @Configuration
 public class CorsConfig {
     @Bean

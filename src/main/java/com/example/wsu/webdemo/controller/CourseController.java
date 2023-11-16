@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Exposes CRUD operations for WSU courses
+ * Exposes CRUD operations for courses
  */
 @RestController
 @RequestMapping("courses")
@@ -25,27 +25,51 @@ public class CourseController {
 
     private final CourseService courseService;
 
+    /**
+     * Creates a new course
+     * @param course details of course to create
+     * @return newly created course
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CourseDTO createCourse(@RequestBody CourseDTO course) {
         return courseService.createCourse(course);
     }
 
+    /**
+     * Retrieves a specific course by id
+     * @param courseId id of course to retrieve
+     * @return specified course
+     */
     @GetMapping(value = "/{id}")
     public CourseDTO getCourse(@PathVariable("id") Long courseId) {
         return courseService.getCourse(courseId);
     }
 
+    /**
+     * Retrieves all courses
+     * @return list of all courses
+     */
     @GetMapping
     public List<CourseDTO> getAllCourses() {
         return courseService.getAllCourses();
     }
 
+    /**
+     * Updates a specific course
+     * @param courseId id of course to update
+     * @param courseDTO details of course to update
+     * @return updated course
+     */
     @PutMapping(value = "/{id}")
     public CourseDTO updateCourse(@PathVariable("id") Long courseId, @RequestBody CourseDTO courseDTO) {
         return courseService.updateCourse(courseId, courseDTO);
     }
 
+    /**
+     * Deletes a specific course
+     * @param courseId id of course to delete
+     */
     @DeleteMapping(value = "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCourse(@PathVariable("id") Long courseId) {

@@ -9,6 +9,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class AppConfig {
+
+    // Add a ModelMapper instance we can use to map entity instances
+    // into DTO instances and vice versa
     @Bean
     public ModelMapper registerMapper() {
         return new ModelMapper();
